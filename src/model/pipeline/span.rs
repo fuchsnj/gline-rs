@@ -49,6 +49,13 @@ impl SpanPipeline<crate::text::splitter::RegexSplitter, crate::text::tokenizer::
             tokenizer: crate::text::tokenizer::HFTokenizer::from_file(tokenizer_path)?,
         })
     }
+
+    pub fn new_from_bytes(tokenizer_bytes: &[u8]) -> Result<Self> {
+        Ok(Self {
+            splitter: crate::text::splitter::RegexSplitter::default(),
+            tokenizer: crate::text::tokenizer::HFTokenizer::from_bytes(tokenizer_bytes)?,
+        })
+    }
 }
 
 /// Shorthand for the default span pipeline type (eases disambiguation when calling `GLiNER::new`)
@@ -65,10 +72,10 @@ impl super::super::GLiNER<SpanMode> {
         })
     }
 
-    pub fn new_from_memory<P: AsRef<Path>>(params: params::Parameters, runtime_params: RuntimeParameters, tokenizer_path: P, model_bytes: &[u8]) -> Result<Self> {
+    pub fn new_from_bytes(params: params::Parameters, runtime_params: RuntimeParameters, tokenizer_bytes: &[u8], model_bytes: &[u8]) -> Result<Self> {
         Ok(Self {
             model: super::super::Model::new_from_memory(model_bytes, runtime_params)?,
-            pipeline: SpanPipeline::new(tokenizer_path)?,
+            pipeline: SpanPipeline::new_from_bytes(tokenizer_bytes)?,
             params,
         })
     }
