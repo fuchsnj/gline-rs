@@ -64,4 +64,12 @@ impl super::super::GLiNER<SpanMode> {
             params,
         })
     }
+
+    pub fn new_from_memory<P: AsRef<Path>>(params: params::Parameters, runtime_params: RuntimeParameters, tokenizer_path: P, model_bytes: &[u8]) -> Result<Self> {
+        Ok(Self {
+            model: super::super::Model::new_from_memory(model_bytes, runtime_params)?,
+            pipeline: SpanPipeline::new(tokenizer_path)?,
+            params,
+        })
+    }
 }
