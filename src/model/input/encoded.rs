@@ -50,13 +50,17 @@ impl EncodedInput {
                 // increment the number of sub-word tokens accordingly
                 total_tokens += encoding.len();
                 // increment the number of sub-word tokens in the entity part (will be used to start the word masks at the right place)
-                if pos <= prompt.entities_len() {
+                if pos < prompt.entities_len() {
                     total_entity_tokens += encoding.len();
                 }
                 prompt_tokens.push(encoding);
             }
+
+            // Adding 1 for the start token
+            let text_offset = total_entity_tokens + 1;
+
             // update global result: push encoded prompt and update max_tokens
-            encodings.push(EncodedPrompt { encoding: prompt_tokens, text_offset: total_entity_tokens });
+            encodings.push(EncodedPrompt { encoding: prompt_tokens, text_offset });
             max_tokens = std::cmp::max(max_tokens, total_tokens);
         }
 
@@ -267,6 +271,24 @@ mod tests {
         let word_masks = encoded.word_masks.row(0);
         assert_eq!(word_masks.to_vec(), vec![0, 0, 0, 0, 0, 1, 2, 3, 4, 0]);
         // Everything rules
+        Ok(())
+    }
+
+    #[test]
+    fn test_words_mask_multi_token_first_word() -> Result<()> {
+        let splitter = crate::text::splitter::RegexSplitter::default();
+        let tokenizer = crate::text::tokenizer::HFTokenizer::from_file("models/gliner_small-v2.1/tokenizer.json")?;
+        // "1a" is encoded with 2 tokens, the rest are 1
+        let batch = [ "1a John Doe"];
+        let entities = ["name"];
+        let input = super::super::text::TextInput::from_str(&batch, &entities)?;
+        let tokenized = super::super::tokenized::TokenizedInput::from(input, &splitter, None)?;
+        let prepared = PromptInput::from(tokenized);
+        let encoded = EncodedInput::from(prepared, &tokenizer)?;
+
+        assert_eq!(encoded.input_ids.row(0).len(), 9);
+        assert_eq!(encoded.word_masks.row(0).to_vec(), vec![0, 0, 0, 0, 1, 0, 2, 3, 0]);
+
         Ok(())
     }
 
